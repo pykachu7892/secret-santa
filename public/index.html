@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173a2d">
+<title>Secret Santa</title>
+<meta name="description" content="Inscris-toi, puis tire au sort la personne à qui tu offres un cadeau.">
+<meta property="og:title" content="Secret Santa">
+<meta property="og:description" content="Inscris-toi, puis tire au sort la personne à qui tu offres un cadeau.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica:ital@0;1&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stock: #173a2d;
+    --stock-deep: #0f2a20;
+    --ink: #efe4c6;
+    --ink-soft: rgba(239, 228, 198, .72);
+    --ink-faint: rgba(239, 228, 198, .28);
+    --gilt: #c6a15b;
+    --wax: #a8242b;
+    --wax-light: #c53a3d;
+    --display: "IM Fell English", "Iowan Old Style", Georgia, serif;
+    --text: "IM Fell DW Pica", "Iowan Old Style", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--stock);
+    color: var(--ink);
+    font-family: var(--text);
+    font-size: 1.15rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before, .sheet::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 .95  0 0 0 0 .85  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .09;
+    z-index: 0;
+  }
+  svg.ill { display: block; fill: currentColor; }
+
+  .page { position: relative; z-index: 1; max-width: 32rem; margin: 0 auto; padding: 2.25rem 1.4rem 3rem; }
+
+  .masthead { text-align: center; }
+  .masthead .cherub { width: min(15rem, 70%); height: auto; aspect-ratio: 169.4 / 89.7; margin: 0 auto .6rem; }
+  .masthead .pine { width: 5.6rem; height: auto; aspect-ratio: 114.2 / 155.6; margin: 0 auto .8rem; }
+  h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2.5rem, 12vw, 3.5rem); line-height: 1.02; margin: 0; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  h2 { font-family: var(--display); font-weight: 400; font-size: 1.85rem; line-height: 1.15; margin: 0 0 .5rem; }
+  .lede { font-style: italic; color: var(--ink-soft); margin: .7rem auto 0; max-width: 24rem; }
+  .meta { margin: .7rem 0 0; color: var(--ink-soft); }
+  .meta b { font-weight: 400; color: var(--ink); }
+  .vine { width: 11rem; height: auto; aspect-ratio: 62.6 / 18.6; margin: 1.8rem auto; color: var(--gilt); }
+
+  section + section { margin-top: 2.6rem; }
+  .centered { text-align: center; }
+
+  /* fields */
+  .field { margin-top: 1.1rem; }
+  .field label { display: block; font-style: italic; color: var(--ink-soft); font-size: 1rem; margin-bottom: .1rem; }
+  .field .help { display: block; font-size: .95rem; color: var(--ink-soft); margin-top: .3rem; }
+  input[type=text], input[type=password], input[type=date] {
+    width: 100%;
+    font: inherit;
+    font-size: 1.3rem;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--gilt);
+    border-radius: 0;
+    padding: .35rem 0 .3rem;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    color-scheme: dark;
+  }
+  input::placeholder { color: var(--ink-faint); font-style: italic; }
+  input:focus { border-bottom-width: 2px; padding-bottom: calc(.3rem - 1px); }
+  input.code { letter-spacing: .5em; font-size: 1.6rem; text-align: center; font-family: var(--display); }
+
+  button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button:focus-visible { outline: 2px solid var(--gilt); outline-offset: 3px; }
+
+  .btn-wax {
+    display: block;
+    width: 100%;
+    background: var(--wax);
+    color: var(--ink);
+    border: 0;
+    border-radius: 3px;
+    padding: .85rem 1rem .8rem;
+    font-family: var(--display);
+    font-size: 1.45rem;
+    line-height: 1.2;
+    box-shadow: inset 0 0 0 4px var(--wax), inset 0 0 0 5px rgba(239, 228, 198, .55);
+  }
+  .btn-wax:active { background: var(--wax-light); box-shadow: inset 0 0 0 4px var(--wax-light), inset 0 0 0 5px rgba(239, 228, 198, .55); }
+  .btn-wax[disabled] { opacity: .4; cursor: not-allowed; }
+  .btn-line {
+    background: transparent;
+    border: 1px solid var(--gilt);
+    color: var(--ink);
+    padding: .5rem 1rem .45rem;
+    border-radius: 2px;
+    font-size: 1.1rem;
+  }
+  .btn-line:active { background: rgba(198, 161, 91, .15); }
+  .btn-text {
+    background: none;
+    border: 0;
+    padding: .4rem .2rem;
+    color: var(--ink-soft);
+    font-style: italic;
+    text-decoration: underline;
+    text-decoration-color: var(--ink-faint);
+    text-underline-offset: .2em;
+  }
+  .actions { margin-top: 1.6rem; }
+  .row-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: .8rem; }
+  .row-actions .btn-line { flex: 1; }
+
+  .note { min-height: 1.4rem; margin: .6rem 0 0; font-style: italic; color: var(--gilt); font-size: 1rem; }
+  .note.center { text-align: center; }
+  .quiet { color: var(--ink-soft); }
+
+  /* names */
+  .roll { list-style: none; margin: .6rem 0 0; padding: 0; }
+  .roll li { display: grid; grid-template-columns: 2.8rem 1fr auto; align-items: center; gap: .9rem; padding: .45rem 0; }
+  .roll li + li { border-top: 1px solid rgba(198, 161, 91, .25); }
+  .roll .name { font-size: 1.3rem; font-style: italic; overflow-wrap: anywhere; }
+  .roll .you { font-size: .95rem; color: var(--gilt); font-style: normal; margin-left: .4rem; }
+  .remove { background: none; border: 0; width: 2.6rem; height: 2.6rem; color: var(--ink-soft); font-family: var(--display); font-size: 1.6rem; line-height: 1; }
+
+  .initial { display: block; width: 100%; aspect-ratio: 1; color: var(--ink); }
+  .initial svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+  .initial--plain {
+    display: grid;
+    place-items: center;
+    border: 1px solid currentColor;
+    box-shadow: inset 0 0 0 3px var(--ring, var(--stock)), inset 0 0 0 4px currentColor;
+    font-family: var(--display);
+    font-size: 1.5em;
+    line-height: 1;
+    padding-top: .08em;
+  }
+
+  .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem 1rem; margin: 1.4rem 0 0; padding: 0; list-style: none; }
+  .tile { width: 100%; background: none; border: 0; padding: .2rem 0 0; text-align: center; }
+  .tile .initial { width: 4.4rem; margin: 0 auto .45rem; }
+  .tile .initial--plain { font-size: 2.2rem; }
+  .tile .name { display: block; font-size: 1.3rem; font-style: italic; line-height: 1.2; overflow-wrap: anywhere; }
+  .tile .state { display: block; font-size: .95rem; color: var(--gilt); min-height: 1.4rem; }
+  .tile.done .initial, .tile.done .name { opacity: .45; }
+
+  /* jour J list */
+  .pairs { list-style: none; margin: 1rem 0 0; padding: 0; }
+  .pairs li { display: grid; grid-template-columns: 2.6rem 1fr; gap: .9rem; align-items: center; padding: .55rem 0; }
+  .pairs li + li { border-top: 1px solid rgba(198, 161, 91, .25); }
+  .pairs .line { font-size: 1.2rem; }
+  .pairs .line i { color: var(--ink-soft); }
+
+  .seal { text-align: center; color: var(--ink-soft); font-style: italic; margin: 2.2rem auto 0; max-width: 25rem; }
+
+  /* organizer-only area: a framed insert */
+  .panel {
+    border: 1px solid var(--gilt);
+    outline: 1px solid var(--gilt);
+    outline-offset: 4px;
+    padding: 1.3rem 1.2rem 1.4rem;
+    margin: 3rem 5px 0;
+  }
+  .panel h2 { font-size: 1.5rem; }
+  .panel p { margin: .4rem 0 0; }
+  .link-box { margin-top: .5rem; font-size: 1rem; color: var(--ink-soft); overflow-wrap: anywhere; font-style: italic; }
+  .panel hr { border: 0; border-top: 1px solid rgba(198, 161, 91, .35); margin: 1.4rem 0; }
+
+  .mine { list-style: none; padding: 0; margin: .6rem 0 0; }
+  .mine li + li { border-top: 1px solid rgba(198, 161, 91, .25); }
+  .mine a { display: block; padding: .55rem 0; color: var(--ink); font-style: italic; font-size: 1.25rem; text-decoration: none; }
+  .mine a span { color: var(--ink-soft); font-size: .95rem; font-style: normal; margin-left: .4rem; }
+
+  .credits { margin: 3rem auto 0; max-width: 26rem; text-align: center; font-size: .88rem; line-height: 1.5; color: var(--ink-soft); }
+  .credits a { color: inherit; text-decoration-color: var(--ink-faint); }
+
+  .loading { text-align: center; color: var(--ink-soft); font-style: italic; padding-top: 30vh; }
+
+  /* full-screen sheet */
+  .sheet { position: fixed; inset: 0; z-index: 10; background: var(--stock-deep); overflow-y: auto; display: none; }
+  .sheet.open { display: block; --ring: var(--stock-deep); }
+  .sheet.card { background: var(--ink); color: var(--stock); --ring: var(--ink); }
+  .sheet.card::before {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .1  0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .14;
+  }
+  .sheet-inner { position: relative; z-index: 1; min-height: 100%; max-width: 26rem; margin: 0 auto; padding: 3rem 1.6rem; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+  .sheet .big-initial { width: 6rem; margin: 0 auto 1.3rem; }
+  .sheet .big-initial.initial--plain { font-size: 3.2rem; }
+  .sheet .ask { font-family: var(--display); font-size: 2rem; line-height: 1.15; margin: 0; }
+  .sheet .sub { color: var(--ink-soft); font-style: italic; margin: .7rem 0 1.6rem; }
+  .sheet .stack { display: grid; gap: .9rem; margin-top: 1.6rem; }
+  .sheet .note { text-align: center; }
+
+  .reveal-to { font-style: italic; color: rgba(23, 58, 45, .78); font-size: 1.25rem; margin: 0; }
+  .wreath { position: relative; width: min(17rem, 78vw); aspect-ratio: 78.2 / 80.4; margin: 1.2rem auto .6rem; color: var(--stock); }
+  .wreath > svg { width: 100%; height: 100%; }
+  .wreath .initial { position: absolute; width: 21%; left: 47.3%; top: 48.3%; transform: translate(-50%, -50%); color: var(--wax); }
+  .wreath .initial--plain { font-size: 1.9rem; }
+  .recipient { font-family: var(--display); font-style: italic; font-size: clamp(2.6rem, 14vw, 3.8rem); line-height: 1.05; margin: .2rem 0 0; overflow-wrap: anywhere; }
+  .reveal-meta { margin: .8rem 0 0; color: #7a5a1f; }
+  .sheet.card .btn-wax { box-shadow: inset 0 0 0 4px var(--wax), inset 0 0 0 5px rgba(239, 228, 198, .6); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal .wreath > svg { animation: unfurl 900ms cubic-bezier(.2,.7,.2,1) both; }
+    .reveal .wreath .initial { animation: press 500ms 500ms cubic-bezier(.3,1.4,.5,1) both; }
+    .reveal .recipient { animation: ink 700ms 750ms ease-out both; }
+    @keyframes unfurl { from { transform: rotate(-35deg) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes press { from { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+    @keyframes ink { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
+  }
+</style>
+</head>
+<body>
+
+<main class="page" id="app"><p class="loading">Un instant…</p></main>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet-inner" id="sheet-inner"></div>
+</div>
+
+<script>
+(() => {
+  const ART = "art.svg";
+  const LETTERS = new Set(["a","b","c","d","e","f","g","h","i","k","l","m","n","o","p","q","r","s","t","v","w","y","z"]);
+
+  /* ---------- small helpers ---------- */
+  const LS = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+  };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const $ = id => document.getElementById(id);
+  const ill = (id, cls) => `<svg class="ill ${cls}" aria-hidden="true"><use href="${ART}#${id}"/></svg>`;
+
+  function initial(name, extra = "") {
+    let c = String(name).trim().charAt(0).toUpperCase();
+    if (c === "Œ") c = "O";
+    if (c === "Æ") c = "A";
+    c = c.normalize("NFD").charAt(0);
+    const k = c.toLowerCase();
+    if (LETTERS.has(k)) return `<span class="initial ${extra}" aria-hidden="true"><svg><use href="${ART}#l-${k}"/></svg></span>`;
+    return `<span class="initial initial--plain ${extra}" aria-hidden="true">${esc(c || "?")}</span>`;
+  }
+
+  const dayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const longDay = ms => dayFmt.format(new Date(ms));
+  function daysUntil(ms, now) {
+    const d = Math.ceil((ms - now) / 86400000);
+    return d <= 1 ? "demain" : `dans ${d} jours`;
+  }
+
+  async function call(action, data = {}) {
+    const res = await fetch("/api/santa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ...data }),
+    });
+    let out = {};
+    try { out = await res.json(); } catch (e) {}
+    if (!res.ok) throw new Error(out.error || "Le serveur ne répond pas. Vérifie ta connexion et réessaie.");
+    return out;
+  }
+
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+    const t = document.createElement("textarea");
+    t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    t.remove();
+    return ok;
+  }
+
+  /* ---------- where we are ---------- */
+  const params = new URLSearchParams(location.search);
+  let eventId = params.get("e");
+  const hashAdmin = (location.hash.match(/admin=([A-Za-z0-9_-]+)/) || [])[1];
+  if (eventId && hashAdmin) {
+    LS.set("ss:admin:" + eventId, hashAdmin);
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  const adminKey = () => (eventId ? LS.get("ss:admin:" + eventId) : null);
+  const myPid = () => (eventId ? LS.get("ss:pid:" + eventId) : null);
+  const shareUrl = () => `${location.origin}${location.pathname}?e=${eventId}`;
+  const adminUrl = () => `${shareUrl()}#admin=${adminKey()}`;
+
+  function remember(id, name) {
+    let mine = [];
+    try { mine = JSON.parse(LS.get("ss:mine") || "[]"); } catch (e) {}
+    mine = mine.filter(x => x.id !== id);
+    mine.unshift({ id, name });
+    LS.set("ss:mine", JSON.stringify(mine.slice(0, 12)));
+  }
+
+  let S = null;          // last state from the server
+  let loadError = "";
+  let flash = { text: "", where: "" };
+  const $app = $("app");
+
+  async function refresh() {
+    try {
+      S = await call("state", { id: eventId, pid: myPid(), adminKey: adminKey() });
+      loadError = "";
+      if (myPid() && !S.me) LS.del("ss:pid:" + eventId); // removed by the organizer
+      remember(S.id, S.name);
+    } catch (e) {
+      loadError = e.message;
+    }
+    render();
+  }
+
+  function render() {
+    if (!eventId) return viewCreate();
+    if (loadError && !S) return viewMissing();
+    if (!S) return;
+    viewEvent();
+  }
+
+  const credits = () => `<p class="credits">Gravures et lettrines tirées de magazines publiés entre 1880 et 1910, tombées dans le domaine public et vectorisées par <a href="https://github.com/WelshPixie/vintageart">WelshPixie</a> (licence CC0). Caractères IM Fell, d’après les fontes que John Fell légua à l’imprimerie d’Oxford au XVII<sup>e</sup> siècle.</p>`;
+  const note = where => `<p class="note ${where === "sheet" ? "center" : ""}" id="note-${where}" aria-live="polite">${flash.where === where ? esc(flash.text) : ""}</p>`;
+  function say(where, text) {
+    flash = { text, where };
+    const el = $("note-" + where);
+    if (el) el.textContent = text;
+  }
+
+  /* ---------- create a group ---------- */
+  function nextChristmasEve() {
+    const now = new Date();
+    let y = now.getFullYear();
+    if (now > new Date(y, 11, 24)) y += 1;
+    return `${y}-12-24`;
+  }
+  const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  function dayStart(iso) { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d, 0, 0, 0).getTime(); }
+
+  function viewCreate() {
+    let mine = [];
+    try { mine = JSON.parse(LS.get("ss:mine") || "[]"); } catch (e) {}
+    $app.innerHTML = `
+      <header class="masthead">
+        ${ill("cherub", "cherub")}
+        <h1>Secret Santa</h1>
+        <p class="lede">Crée ton groupe et partage le lien. Chacun s’inscrit depuis son téléphone, puis tire au sort la personne à qui il offre.</p>
+      </header>
+      ${ill("vine", "vine")}
+      <section>
+        <form id="create" autocomplete="off" novalidate>
+          <div class="field">
+            <label for="g-name">Nom du groupe</label>
+            <input type="text" id="g-name" maxlength="40" placeholder="Noël des copains" autocapitalize="sentences">
+          </div>
+          <div class="field">
+            <label for="g-date">Jour J, quand on s’offre les cadeaux</label>
+            <input type="date" id="g-date" value="${nextChristmasEve()}" min="${todayIso()}">
+            <span class="help">La liste de qui offre à qui restera scellée jusqu’à ce jour-là.</span>
+          </div>
+          <div class="field">
+            <label for="g-budget">Budget par cadeau (facultatif)</label>
+            <input type="text" id="g-budget" maxlength="24" placeholder="20 €">
+          </div>
+          <div class="actions">
+            <button class="btn-wax" type="submit" id="g-go">Créer le groupe</button>
+            ${note("create")}
+          </div>
+        </form>
+      </section>
+      ${mine.length ? `
+        <section>
+          <h2>Tes groupes</h2>
+          <ul class="mine">${mine.map(g => `<li><a href="?e=${encodeURIComponent(g.id)}">${esc(g.name)}${LS.get("ss:admin:" + g.id) ? "<span>organisateur</span>" : ""}</a></li>`).join("")}</ul>
+        </section>` : ""}
+      ${credits()}
+    `;
+    $("create").addEventListener("submit", async e => {
+      e.preventDefault();
+      const name = $("g-name").value.trim();
+      const date = $("g-date").value;
+      if (!name) { say("create", "Donne un nom au groupe."); $("g-name").focus(); return; }
+      if (!date) { say("create", "Choisis la date du jour J."); $("g-date").focus(); return; }
+      const btn = $("g-go"); btn.disabled = true;
+      try {
+        const out = await call("create", { name, revealDate: date, revealAt: dayStart(date), budget: $("g-budget").value.trim() });
+        LS.set("ss:admin:" + out.id, out.adminKey);
+        remember(out.id, name);
+        eventId = out.id;
+        history.pushState(null, "", `?e=${out.id}`);
+        flash = { text: "", where: "" };
+        $app.innerHTML = `<p class="loading">Un instant…</p>`;
+        await refresh();
+        window.scrollTo(0, 0);
+      } catch (err) {
+        say("create", err.message);
+        btn.disabled = false;
+      }
+    });
+  }
+
+  function viewMissing() {
+    $app.innerHTML = `
+      <header class="masthead">
+        ${ill("pine", "pine")}
+        <h2>Groupe introuvable</h2>
+        <p class="lede">${esc(loadError)} Vérifie le lien reçu, ou crée un nouveau groupe.</p>
+      </header>
+      <div class="actions"><button class="btn-wax" type="button" id="home">Créer un groupe</button></div>
+      ${credits()}`;
+    $("home").addEventListener("click", () => { location.href = location.pathname; });
+  }
+
+  /* ---------- the group page ---------- */
+  function viewEvent() {
+    const me = S.me;
+    const open = S.status === "open";
+    const n = S.people.length;
+    const drawnCount = S.people.filter(p => p.drawn).length;
+    const day = longDay(S.revealAt);
+
+    let body = "";
+
+    if (S.list) {
+      body += `
+        <section>
+          <h2 class="centered">Qui offre à qui</h2>
+          <p class="quiet centered" style="margin:0">C’est le jour J, la liste est ouverte.</p>
+          <ul class="pairs">${S.list.map(p => `
+            <li>${initial(p.from)}<span class="line">${esc(p.from)} <i>offre à</i> ${esc(p.to)}</span></li>`).join("")}</ul>
+        </section>`;
+    }
+
+    if (open) {
+      body += me ? `
+        <section class="centered">
+          <h2>Tu es inscrit, ${esc(me.name)}.</h2>
+          <p class="quiet">Garde ton code à 4 chiffres en tête. Quand l’organisateur aura fermé les inscriptions, reviens sur ce lien pour tirer ton prénom.</p>
+        </section>` : `
+        <section>
+          <h2>Inscris-toi</h2>
+          <form id="join" autocomplete="off" novalidate>
+            <div class="field">
+              <label for="j-name">Ton prénom</label>
+              <input type="text" id="j-name" maxlength="24" placeholder="Camille" autocapitalize="words">
+            </div>
+            <div class="field">
+              <label for="j-pin">Choisis un code à 4 chiffres</label>
+              <input type="password" id="j-pin" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="····">
+              <span class="help">Il te servira à tirer ton prénom. Garde-le pour toi.</span>
+            </div>
+            <div class="actions">
+              <button class="btn-wax" type="submit" id="j-go">M’inscrire</button>
+              ${note("join")}
+            </div>
+          </form>
+        </section>`;
+
+      body += `
+        <section>
+          <h2>Inscrits${n ? ` (${n})` : ""}</h2>
+          ${n ? `<ul class="roll">${S.people.map(p => `
+            <li>
+              ${initial(p.name)}
+              <span class="name">${esc(p.name)}${me && me.pid === p.pid ? `<span class="you">c’est toi</span>` : ""}</span>
+              ${S.isAdmin ? `<button class="remove" type="button" data-remove="${esc(p.pid)}" data-name="${esc(p.name)}" aria-label="Retirer ${esc(p.name)}">×</button>` : "<span></span>"}
+            </li>`).join("")}</ul>`
+          : `<p class="quiet">Personne pour l’instant. Sois le premier.</p>`}
+        </section>`;
+    } else {
+      const meLate = me && S.people.find(p => p.pid === me.pid && p.late);
+      if (me && !meLate) {
+        const done = S.people.find(p => p.pid === me.pid && p.drawn);
+        body += `
+          <section class="centered">
+            <h2>${esc(me.name)}, à toi de tirer</h2>
+            <p class="quiet">Les inscriptions sont fermées. Tire ton prénom en secret.</p>
+            <div class="actions"><button class="btn-wax" type="button" data-draw="${esc(me.pid)}" data-name="${esc(me.name)}">${done ? "Revoir mon tirage" : "Tirer mon prénom"}</button></div>
+            <p><button class="btn-text" type="button" id="not-me">Ce n’est pas moi</button></p>
+          </section>`;
+      } else if (meLate) {
+        body += `<section class="centered"><h2>Tu t’es inscrit trop tard</h2><p class="quiet">Le tirage avait déjà eu lieu. Demande à l’organisateur de rouvrir les inscriptions pour refaire le tirage avec toi.</p></section>`;
+      }
+      body += `
+        <section>
+          <h2 class="centered">${me ? "Le groupe" : "Touche ton prénom pour tirer"}</h2>
+          <ul class="tiles">${S.people.map(p => `
+            <li>
+              <button class="tile ${p.drawn ? "done" : ""}" type="button" data-draw="${esc(p.pid)}" data-name="${esc(p.name)}" ${p.late ? "disabled" : ""}>
+                ${initial(p.name)}
+                <span class="name">${esc(p.name)}</span>
+                <span class="state">${p.late ? "inscrit après le tirage" : p.drawn ? "a tiré" : ""}</span>
+              </button>
+            </li>`).join("")}</ul>
+          <p class="quiet centered" style="margin-top:1.6rem">${drawnCount === 0 ? "Personne n’a encore tiré." : drawnCount === n ? "Tout le monde a tiré son prénom." : `${drawnCount} sur ${n} ont tiré leur prénom.`}</p>
+        </section>`;
+    }
+
+    if (!S.list) {
+      body += `<p class="seal">La liste de qui offre à qui est scellée jusqu’au jour J, ${esc(day)} (${daysUntil(S.revealAt, S.now)}). Même l’organisateur ne peut pas la voir avant.</p>`;
+    }
+
+    if (S.isAdmin) body += adminPanel(open, n, drawnCount);
+
+    $app.innerHTML = `
+      <header class="masthead">
+        ${ill("pine", "pine")}
+        <h1>${esc(S.name)}</h1>
+        <p class="meta">Jour J : <b>${esc(day)}</b>${S.budget ? `<br>Budget : <b>${esc(S.budget)}</b>` : ""}</p>
+      </header>
+      ${ill("vine", "vine")}
+      ${body}
+      ${credits()}
+    `;
+    bindEvent();
+  }
+
+  function adminPanel(open, n, drawnCount) {
+    return `
+      <section class="panel" aria-labelledby="admin-title">
+        <h2 id="admin-title">Espace organisateur</h2>
+        <p class="quiet">Toi seul vois ce cadre.</p>
+        <hr>
+        <p>Lien d’inscription à envoyer sur Snap :</p>
+        <p class="link-box">${esc(shareUrl())}</p>
+        <div class="row-actions">
+          ${navigator.share ? `<button class="btn-line" type="button" id="a-share">Partager</button>` : ""}
+          <button class="btn-line" type="button" id="a-copy">Copier le lien</button>
+        </div>
+        ${note("share")}
+        <hr>
+        ${open ? `
+          <p>${n < 3 ? `Il faut au moins 3 inscrits pour faire le tirage (${n} pour l’instant).` : `${n} inscrits. Quand tout le monde est là, ferme les inscriptions : le tirage se fait à ce moment-là.`}</p>
+          <div class="actions"><button class="btn-wax" type="button" id="a-close" ${n < 3 ? "disabled" : ""}>Fermer les inscriptions et tirer au sort</button></div>
+          ${note("admin")}
+          <p style="margin-top:1rem"><button class="btn-text" type="button" id="a-settings">Changer la date ou le budget</button></p>
+          <div id="settings-box" hidden>
+            <div class="field">
+              <label for="s-date">Jour J</label>
+              <input type="date" id="s-date" value="${esc(S.revealDate)}" min="${todayIso()}">
+            </div>
+            <div class="field">
+              <label for="s-budget">Budget par cadeau</label>
+              <input type="text" id="s-budget" maxlength="24" value="${esc(S.budget || "")}" placeholder="20 €">
+            </div>
+            <div class="row-actions"><button class="btn-line" type="button" id="s-save">Enregistrer</button></div>
+          </div>` : `
+          <p>Le tirage est fait. ${drawnCount} sur ${n} ont tiré leur prénom.</p>
+          <p class="quiet">Tu ne vois pas les paires, comme tout le monde, jusqu’au jour J.</p>
+          <p style="margin-top:1rem"><button class="btn-text" type="button" id="a-reopen">Rouvrir les inscriptions</button></p>
+          ${note("admin")}`}
+        <hr>
+        <p>Ton lien organisateur, pour gérer le groupe depuis un autre téléphone. Ne le partage pas.</p>
+        <div class="row-actions"><button class="btn-line" type="button" id="a-mylink">Copier mon lien organisateur</button></div>
+        ${note("mylink")}
+      </section>`;
+  }
+
+  function bindEvent() {
+    const join = $("join");
+    if (join) join.addEventListener("submit", async e => {
+      e.preventDefault();
+      const name = $("j-name").value.trim();
+      const pin = $("j-pin").value.trim();
+      if (!name) { say("join", "Écris ton prénom."); $("j-name").focus(); return; }
+      if (!/^\d{4}$/.test(pin)) { say("join", "Le code doit faire exactement 4 chiffres."); $("j-pin").focus(); return; }
+      const btn = $("j-go"); btn.disabled = true;
+      try {
+        const out = await call("join", { id: eventId, name, pin });
+        LS.set("ss:pid:" + eventId, out.pid);
+        flash = { text: "", where: "" };
+        await refresh();
+      } catch (err) {
+        say("join", err.message);
+        btn.disabled = false;
+      }
+    });
+
+    $app.querySelectorAll("[data-remove]").forEach(b => b.addEventListener("click", () => confirmSheet({
+      title: `Retirer ${b.dataset.name} ?`,
+      text: "Cette personne ne fera plus partie du tirage. Elle pourra se réinscrire tant que les inscriptions sont ouvertes.",
+      yes: `Retirer ${b.dataset.name}`,
+      run: () => call("remove", { id: eventId, adminKey: adminKey(), pid: b.dataset.remove }),
+    })));
+
+    $app.querySelectorAll("[data-draw]").forEach(b => b.addEventListener("click", () => askCode(b.dataset.draw, b.dataset.name, b)));
+
+    const notMe = $("not-me");
+    if (notMe) notMe.addEventListener("click", () => { LS.del("ss:pid:" + eventId); refresh(); });
+
+    const share = $("a-share");
+    if (share) share.addEventListener("click", async () => {
+      try { await navigator.share({ title: S.name, text: `Inscris-toi au Secret Santa « ${S.name} »`, url: shareUrl() }); }
+      catch (e) { if (e && e.name !== "AbortError") say("share", "Le partage n’a pas marché. Copie le lien à la place."); }
+    });
+    const cp = $("a-copy");
+    if (cp) cp.addEventListener("click", async () => say("share", (await copy(shareUrl())) ? "Lien copié. Colle-le dans ta conversation Snap." : "Copie impossible ici : sélectionne le lien au-dessus."));
+    const ml = $("a-mylink");
+    if (ml) ml.addEventListener("click", async () => say("mylink", (await copy(adminUrl())) ? "Lien organisateur copié. Garde-le dans tes notes." : "Copie impossible ici."));
+
+    const close = $("a-close");
+    if (close) close.addEventListener("click", () => confirmSheet({
+      title: "Fermer les inscriptions ?",
+      text: `Le tirage va se faire maintenant entre les ${S.people.length} inscrits. Plus personne ne pourra s’inscrire, sauf si tu rouvres.`,
+      yes: "Fermer et tirer au sort",
+      run: () => call("close", { id: eventId, adminKey: adminKey() }),
+    }));
+    const reopen = $("a-reopen");
+    if (reopen) reopen.addEventListener("click", () => confirmSheet({
+      title: "Rouvrir les inscriptions ?",
+      text: "Le tirage actuel sera effacé sans être révélé. Il faudra refermer pour refaire un tirage, et chacun devra tirer à nouveau.",
+      yes: "Effacer le tirage et rouvrir",
+      run: () => call("reopen", { id: eventId, adminKey: adminKey() }),
+    }));
+    const st = $("a-settings");
+    if (st) st.addEventListener("click", () => { const box = $("settings-box"); box.hidden = !box.hidden; });
+    const ss = $("s-save");
+    if (ss) ss.addEventListener("click", async () => {
+      const date = $("s-date").value;
+      if (!date) { say("admin", "Choisis la date du jour J."); return; }
+      try {
+        await call("settings", { id: eventId, adminKey: adminKey(), revealDate: date, revealAt: dayStart(date), budget: $("s-budget").value.trim() });
+        flash = { text: "Enregistré.", where: "admin" };
+        await refresh();
+      } catch (err) { say("admin", err.message); }
+    });
+  }
+
+  /* ---------- private sheet ---------- */
+  const $sheet = $("sheet"), $inner = $("sheet-inner");
+  let lastFocus = null;
+
+  function openSheet(html, reveal = false) {
+    if (!$sheet.classList.contains("open")) lastFocus = document.activeElement;
+    $inner.className = "sheet-inner" + (reveal ? " reveal" : "");
+    $sheet.classList.toggle("card", reveal);
+    $inner.innerHTML = html;
+    $sheet.classList.add("open");
+    $sheet.scrollTop = 0;
+    document.body.style.overflow = "hidden";
+  }
+  function closeSheet() {
+    $sheet.classList.remove("open", "card");
+    $inner.innerHTML = "";
+    document.body.style.overflow = "";
+    if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+  }
+
+  function askCode(pid, name) {
+    flash = { text: "", where: "" };
+    openSheet(`
+      ${initial(name, "big-initial")}
+      <p class="ask" id="sheet-title">C’est bien toi, ${esc(name)} ?</p>
+      <p class="sub">Tape ton code à 4 chiffres. Les autres, regardez ailleurs.</p>
+      <form id="code-form" autocomplete="off" novalidate>
+        <input type="password" id="code" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="····" aria-label="Ton code à 4 chiffres">
+        ${note("sheet")}
+        <div class="stack">
+          <button class="btn-wax" type="submit" id="code-go">Tirer mon prénom</button>
+          <button class="btn-text" type="button" id="code-no">Ce n’est pas moi</button>
+        </div>
+      </form>
+    `);
+    const input = $("code");
+    setTimeout(() => input.focus(), 50);
+    $("code-no").addEventListener("click", closeSheet);
+    $("code-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const pin = input.value.trim();
+      if (!/^\d{4}$/.test(pin)) { say("sheet", "Le code fait 4 chiffres."); input.focus(); return; }
+      const btn = $("code-go"); btn.disabled = true;
+      try {
+        const out = await call("draw", { id: eventId, pid, pin });
+        LS.set("ss:pid:" + eventId, pid);
+        reveal(out);
+      } catch (err) {
+        say("sheet", err.message);
+        input.value = "";
+        input.focus();
+        btn.disabled = false;
+      }
+    });
+  }
+
+  function reveal(out) {
+    openSheet(`
+      <p class="reveal-to" id="sheet-title">${esc(out.from)}, tu offres un cadeau à</p>
+      <div class="wreath">
+        ${ill("wreath", "")}
+        ${initial(out.to)}
+      </div>
+      <p class="recipient">${esc(out.to)}</p>
+      <p class="reveal-meta">Jour J : ${esc(longDay(S.revealAt))}${S.budget ? `<br>Budget : ${esc(S.budget)}` : ""}</p>
+      <div class="stack">
+        <button class="btn-wax" type="button" id="hide">C’est retenu, je ferme</button>
+      </div>
+    `, true);
+    $("hide").focus({ preventScroll: true });
+    $("hide").addEventListener("click", () => { closeSheet(); refresh(); });
+  }
+
+  function confirmSheet({ title, text, yes, run }) {
+    flash = { text: "", where: "" };
+    openSheet(`
+      <p class="ask" id="sheet-title">${esc(title)}</p>
+      <p class="sub">${esc(text)}</p>
+      ${note("sheet")}
+      <div class="stack">
+        <button class="btn-wax" type="button" id="c-yes">${esc(yes)}</button>
+        <button class="btn-text" type="button" id="c-no">Annuler</button>
+      </div>
+    `);
+    $("c-yes").focus({ preventScroll: true });
+    $("c-no").addEventListener("click", closeSheet);
+    $("c-yes").addEventListener("click", async e => {
+      e.target.disabled = true;
+      try { await run(); closeSheet(); await refresh(); }
+      catch (err) { say("sheet", err.message); e.target.disabled = false; }
+    });
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape" || !$sheet.classList.contains("open")) return;
+    const hide = $("hide");
+    if (hide) hide.click(); else closeSheet();
+  });
+
+  window.addEventListener("popstate", () => {
+    eventId = new URLSearchParams(location.search).get("e");
+    S = null; loadError = "";
+    if (eventId) refresh(); else render();
+  });
+
+  // Keep the page fresh so people see when registrations close.
+  setInterval(() => {
+    if (eventId && document.visibilityState === "visible" && !$sheet.classList.contains("open")) {
+      const typing = document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+      const drafted = [...$app.querySelectorAll("#join input")].some(i => i.value);
+      const editing = $("settings-box") && !$("settings-box").hidden;
+      if (!typing && !drafted && !editing) refresh();
+    }
+  }, 20000);
+
+  if (eventId) refresh(); else render();
+})();
+</script>
+</body>
+</html>
